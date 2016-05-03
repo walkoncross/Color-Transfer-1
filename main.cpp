@@ -5,6 +5,11 @@
 #include<opencv2/core/eigen.hpp>
 
 int main(int argc, char* argv[]) {
+	/////////////////////////
+	///　必要な変数の宣言 ///
+	/////////////////////////
+
+
     // Transformation from RGB to LMS
 	cv::Mat1f RGB2LMS = (cv::Mat_<float>(3, 3) << 0.3811, 0.5783, 0.0402, 0.1967, 0.7244, 0.0782, 0.0241, 0.1288, 0.8444);
 
@@ -21,30 +26,11 @@ int main(int argc, char* argv[]) {
 	cv::Mat1f LMS2lab;
 	LMS2lab = LMS2lab1 * LMS2lab2;
 
+	// Transformation from lab to LMS
 	cv::Mat1f lab2LMS = LMS2lab.inv();
 
+	
 	const float eps = 1.0e-4;
-
-	//画像の読み込み
-	cv::Mat src = cv::imread("source01.jpg");
-	cv::Mat ref = cv::imread("reference02.jpg");
-	cv::namedWindow("target", cv::WINDOW_AUTOSIZE|cv::WINDOW_FREERATIO);
-	cv::imshow("target", src);
-	cv::namedWindow("reference", cv::WINDOW_AUTOSIZE|cv::WINDOW_FREERATIO);
-	cv::imshow("reference", ref);
-
-	//BGRからRGBに変換
-	cv::cvtColor(src, src, CV_BGR2RGB);
-	cv::cvtColor(ref, ref, CV_BGR2RGB);
-
-	//0~1のfloatに変換
-	src.convertTo(src, CV_64FC3, 1.0 / 255.0);
-	ref.convertTo(ref, CV_64FC3, 1.0 / 255.0);
-
-	cv::Mat3f src3f = cv::Mat3f(src);
-	cv::Mat3f ref3f = cv::Mat3f(ref);
-
-	cv::Mat1f buf(1, 3);
 
 	//平均値を格納する変数(各チャンネルごとに用意)
 	cv::Mat1f src_mean(1, 3);
@@ -61,6 +47,31 @@ int main(int argc, char* argv[]) {
 		ref_mean(c) = 0.0;
 		ref_disp(c) = 0.0;
 	}
+
+	////////////////////////
+	/// 以下、プログラム ///
+	////////////////////////
+
+	//画像の読み込み
+	cv::Mat src = cv::imread(argv[1]);
+	cv::Mat ref = cv::imread(argv[2]);
+	cv::namedWindow("source", cv::WINDOW_AUTOSIZE|cv::WINDOW_FREERATIO);
+	cv::imshow("source", src);
+	cv::namedWindow("reference", cv::WINDOW_AUTOSIZE|cv::WINDOW_FREERATIO);
+	cv::imshow("reference", ref);
+
+	//BGRからRGBに変換
+	cv::cvtColor(src, src, CV_BGR2RGB);
+	cv::cvtColor(ref, ref, CV_BGR2RGB);
+
+	//0~1のfloatに変換
+	src.convertTo(src, CV_64FC3, 1.0 / 255.0);
+	ref.convertTo(ref, CV_64FC3, 1.0 / 255.0);
+
+	cv::Mat3f src3f = cv::Mat3f(src);
+	cv::Mat3f ref3f = cv::Mat3f(ref);
+
+	cv::Mat1f buf(1, 3);
 
 	// srcの色空間をRGBからlabに変換
 	for (int y = 0; y < src.rows; ++y) {
@@ -148,13 +159,19 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	// src3f を src に戻す
 	src = cv::Mat(src3f);
+
+	// uchar に戻す
 	src.convertTo(src, CV_8UC3, 255.0);
+
+	// RGB -> BGR
 	cv::cvtColor(src, src, CV_RGB2BGR);
 
+	// 結果の表示
 	cv::namedWindow("result");
 	cv::imshow("result", src);
-	cv::imwrite("result3.jpg", src);
+	cv::imwrite("result.jpg", src);
 
 	cv::waitKey(0);
 	cv::destroyAllWindows();
